@@ -60,12 +60,12 @@ Check_sys(){
 
 # 自定义函数 Update_Shell() 进行脚本升级判断和下载，因为链接形式基本固定的，也就比较好处理。
 Update_Shell(){
-#	 sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/go2do/MyShell/master/autoupdate-github.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1) && sh_new_type="github"
-    sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/go2do/MyShell/master/autoupdate-github.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1)
+#	 sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/hl99/MyShell/master/autoupdate-github.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1) && sh_new_type="github"
+    sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/hl99/MyShell/master/autoupdate-github.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1)
    if [[ -z ${sh_new_ver} ]] ; then
         echo -e "${Error} 无法链接到目标 GitHub !" 
    else
-       wget -N --no-check-certificate "https://raw.githubusercontent.com/go2do/MyShell/master/autoupdate-github.sh" && chmod +x autoupdate-github.sh
+       wget -N --no-check-certificate "https://raw.githubusercontent.com/hl99/MyShell/master/autoupdate-github.sh" && chmod +x autoupdate-github.sh
        echo -e "${Info} 脚本已更新为最新版本[ ${sh_new_ver} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以需要重新运行本脚本)" 
     fi
 }
