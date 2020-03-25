@@ -5,13 +5,13 @@ export PATH
 #=================================================
 #	System Required: CentOS/Debian/Ubuntu
 #	Description: Auto update the software from GitHub 
-#	Version: 1.0
+#	Version: 2.0
 #	Author: Go2do 
 #	Blog: https://www.go2do.net/
 #	Encoding: Unix(LF)  UTF-8  noBOM
 #=================================================
 
-sh_ver="v1.0"
+sh_ver="v2.0"
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"  #定义了一些字体颜色相关的局部变量
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"     #定义了局部变量 "Error" ，输出时显示为红色的“【错误】”字样
@@ -62,33 +62,47 @@ Check_sys(){
 Update_Shell(){
 #	 sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/go2do/MyShell/master/autoupdate-github.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1) && sh_new_type="github"
     sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/go2do/MyShell/master/autoupdate-github.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1)
-    [[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到目标 GitHub !" && exit 1
-    wget -N --no-check-certificate "https://raw.githubusercontent.com/go2do/MyShell/master/autoupdate-github.sh" && chmod +x autoupdate-github.sh
-    echo -e "${Info} 脚本已更新为最新版本[ ${sh_new_ver} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以需要重新运行本脚本)" && exit 0
+   if [[ -z ${sh_new_ver} ]] ; then
+        echo -e "${Error} 无法链接到目标 GitHub !" 
+   else
+       wget -N --no-check-certificate "https://raw.githubusercontent.com/go2do/MyShell/master/autoupdate-github.sh" && chmod +x autoupdate-github.sh
+       echo -e "${Info} 脚本已更新为最新版本[ ${sh_new_ver} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以需要重新运行本脚本)" 
+    fi
 }
 
 Check_pre_info(){
-    echo && [[ -z ${OwnerName} ]] && echo -e "${Error} 没有预设 XXX 软件 GitHub 中的所有者名称！" && echo -n -e "${Tip}" &&  read -e -p "请输入 XXX 软件所有者信息：" OwnerName
-    echo && [[ -z ${RepositoryName} ]] && echo -e "${Error} 没有预设 XXX 软件 GitHub 中的仓库名称！" && echo -n -e "${Tip}" &&  read -e -p "请输入 XXX 软件所在的仓库信息:" RepositoryName
-    echo && [[ -z ${APPName} ]] && echo -e "${Error} 没有预设 XXX 软件的安装后的运行（进程）名称！" && echo -n -e "${Tip}" &&  read -e -p "请输入 XXX 软件安装后的运行（进程）名称，直接回车将使用[ ${RepositoryName} ]：" APPName 
-    [[ -z ${APPName} ]] && APPName=${RepositoryName}          #如果为空，即直接输入回车，则赋值APPName=${RepositoryName} 
+    if [[ -z ${OwnerName} ]]; then
+	    echo && echo -e "${Error} 没有预设 XXX 软件在 GitHub 中的所有者名称！" && echo -n -e "${Tip}" &&  read -e -p "请输入 XXX 软件所有者信息：" OwnerName
+	else
+		[[ ${OwnerName} ]] &&  echo -e "${Tip} 已经设置的 XXX 软件在  GitHub 中的所有者名称为[ ${OwnerName} ]"  
+	fi
+    
+    if [[ -z ${RepositoryName} ]]; then
+	    echo && echo -e "${Error} 没有预设 XXX 软件在 GitHub 中的仓库名称！" && echo -n -e "${Tip}" &&  read -e -p "请输入 XXX 软件所在的仓库信息:" RepositoryName
+	else
+	    [[ ${RepositoryName} ]] &&  echo -e "${Tip} 已经设置的 XXX 软件在 GitHub 中的仓库名称为[ ${RepositoryName} ]"  
+	fi
+  
+    if [[ -z ${APPName} ]]; then
+	    echo && echo -e "${Error} 没有预设 XXX 软件安装后的运行（进程）名称！" && echo -n -e "${Tip}" &&  read -e -p "请输入 XXX 软件安装后的运行（进程）名称，直接回车将使用仓库的名称[ ${RepositoryName} ]：" APPName 
+        [[ -z ${APPName} ]] && APPName=${RepositoryName}          #如果为空，即直接输入回车，则赋值APPName=${RepositoryName} 
+	else
+		[[ ${APPName} ]] &&  echo -e "${Tip} 已经设置的 XXX 软件安装后运行（进程）名称为[ ${APPName} ] "  
+	fi
+	
+	
+	[[ -z ${OwnerName} ]] && [[ -z ${RepositoryName} ]] &&[[ -z ${APPName} ]] && echo &&  echo -e "${Error} 项目预设（或读取）的信息设置有误！" && exit 1
 
-    [[ -z ${OwnerName} ]] && [[ -z ${RepositoryName} ]] &&[[ -z ${APPName} ]] && echo &&  echo -e "${Error} 项目预设（或读取）的信息设置有误！" && exit 1
-
-    echo && [[ -z ${APPath} ]] && echo  -e "${Tip} 没有预设[ ${APPName} ]软件在本地主机上的安装后的文件夹路径，建议设置"  && echo -n -e "${Tip}" && read -e -r -p "请输入[ ${APPName} ]软件的安装路径（将用于版本、PID等信息检测），形如\" /usr/bin/ \"：" APPath
+	
+	if [[ -z ${APPath} ]]; then
+	    echo && echo  -e "${Tip} 没有预设[ ${APPName} ]软件在本地主机上的安装后的文件夹路径，建议设置"  && echo -n -e "${Tip}" && read -e -r -p "请输入[ ${APPName} ]软件的安装路径（将用于版本、PID等信息检测），形如\" /usr/bin/ \"：" APPath
+	else
+	    [[ ${APPath} ]] &&  echo -e "${Tip} 已经设置的 XXX 软件在本地主机上的安装后的文件夹路径为[ ${APPath} ] " 
+	fi
 }
 
 #自定义函数 Check_new_ver() 首先获取现在安装的 XXX 软件的版本号，然后去抓取 GitHub 上 XXX 的最新版本号
 Check_new_ver(){
-#	 echo && echo -e "${Tip}请输入合适的命令读取当前安装的 XXX 的版本 : ${Green_font_prefix}[ 通常格式是: /安装路径/xxx -v  或 -V ]${Font_color_suffix}" &&  read -e now_version_cmd   #该方式存在安全隐患，如输入 rm 
-#	 if [[ -z "${now_version_cmd}" ]]; then                    #如果为空，即直接输入回车
-#	      echo -e "${Error} XXX 当前版本获取失败 !" && echo 
-#	 else
-#	      #now_version=${now_version_cmd} 
-#	      echo &&  echo -n -e "${Info} 检测到 XXX 当前版本为:"	   #echo -n 表示输出时不换行
-#	      ${now_version_cmd} | awk '{print $3}' 
-#	  fi
-	
     now_version=$(${APPath}${APPName} -v|awk '{print $3}')
     [[ -z ${now_version} ]] && echo -e "${Error} 第一次获取[ ${APPName} ]版本信息失败 !将进行第二次测试......" 
     [[ ${now_version} ]] && now_version="v${now_version}" && echo -e "${Info} 第一次获取的[ ${APPName} ]版本信息是 [ ${now_version} ]" && echo
@@ -97,20 +111,25 @@ Check_new_ver(){
     [[ -z ${now_version} ]] && echo -e "${Error} 第二次获取[ ${APPName} ]版本信息失败 !" && echo
     [[ ${now_version} ]] && now_version="v${now_version}" && echo -e "${Info} 第二次获取的[ ${APPName} ]版本信息是 [ ${now_version} ]" && echo
 
-    echo -e "${Tip}请输入要下载的[ ${APPName} ]版本号 ${Green_font_prefix}[ 格式如: v20180101 或 v1.2.3abc 等]${Font_color_suffix}查看版本列表${Green_font_prefix}[ https://github.com/${OwnerName}/${RepositoryName}/releases ]${Font_color_suffix}"
-    echo -n -e "${Tip}" && read -e -p "直接回车即自动获取最新版本:" new_version
-    if [[ -z ${new_version} ]]; then       #字符串判断：if  [ -z $string  ]  如果 string 为空，返回0 (true) 
-	    new_version=$(wget -qO- https://api.github.com/repos/${OwnerName}/${RepositoryName}/releases| grep "tag_name"| head -n 1| awk -F ":" '{print $2}'| sed 's/\"//g;s/,//g;s/ //g')
-		[[ -z ${new_version} ]] && echo -e "${Error} [ ${APPName} ]最新版本获取失败！" && exit 1
-		echo -e "${Info} 检测到[ ${APPName} ]最新版本为${Green_font_prefix}[ ${new_version} ]${Font_color_suffix}" && echo 
-    fi
+#下载 Releases 页面，为后续分析做准备，保存的文件名为 ${OwnerName}_${RepositoryName}_releases-tmp
+	wget -N -c -q -O ./${OwnerName}_${RepositoryName}_releases-tmp  https://api.github.com/repos/${OwnerName}/${RepositoryName}/releases 
 	
-	
-	if [[ ${new_version} ]] && [[ $(wget -qO- https://api.github.com/repos/${OwnerName}/${RepositoryName}/releases| grep "tag_name" | grep "${new_version}"| head -n 1| awk -F ":" '{print $2}'| sed 's/\"//g;s/,//g;s/ //g') ]]; then
-	     echo && echo -e "${Info} 检测到 GitHub 存在版本为${Green_font_prefix}[ ${new_version} ]${Font_color_suffix}的[ ${APPName} ]" 
-    else
-        echo -e "${Error} [ ${APPName} ]版本${Green_font_prefix}[ ${new_version} ]${Font_color_suffix}获取失败，可能版本错误！" && exit 1
-	fi	
+	if [[ -s  "${OwnerName}_${RepositoryName}_releases-tmp" ]]; then
+	    versionlist=$( cat ${OwnerName}_${RepositoryName}_releases-tmp | grep "tag_name"| head -n 10 | awk -F ":" '{print $2 "  "}'| sed 's/\"//g;s/,//g;s/ //g')	
+		echo -e "${Info} 仓库[ ${RepositoryName} ]项目中已经 Releases 的最新前 10 版本号分别是： \n${Green_font_prefix}${versionlist}${Font_color_suffix}" && echo 
+	    echo -e "${Info} 如需更多版本信息，请前往${Font_color_suffix}查看版本列表${Green_font_prefix}[ https://github.com/${OwnerName}/${RepositoryName}/releases ]${Font_color_suffix}"
+        echo -n -e "${Tip}请输入要下载的仓库[ ${RepositoryName} ]项目中已经发布的版本号，" && read -e -p "直接回车自动选择最新版本:" new_version
+	  
+    	[[ -z ${new_version} ]] && new_version=$( echo "${versionlist}" |awk '{print $1}'|head -n 1)	
+	    [[ ${new_version} ]] && get_version=$(cat  ${OwnerName}_${RepositoryName}_releases-tmp | grep "tag_name" | grep "${new_version}"| head -n 1| awk -F ":" '{print $2}'| sed 's/\"//g;s/,//g;s/ //g') 
+        
+		[[ -z ${get_version} ]] &&  echo -e "${Error} 您输入的${Green_font_prefix}[ ${new_version} ]${Font_color_suffix} 版本号的在仓库[ ${RepositoryName} ]项目的信息获取失败，可能版本信息有误，没有找到可用的 Releases 资源！" && exit 1
+	else	
+	    echo -e "${Error} 仓库[ ${RepositoryName} ]项目信息获取失败，可能项目信息设置有误，或者没有可用的 Releases 资源！" 
+	    echo -e "${Error} 请查验 ${Green_font_prefix}[ https://github.com/${OwnerName}/${RepositoryName}/releases ]${Font_color_suffix} 页面是否存在！" 
+		rm -rf ./"${OwnerName}_${RepositoryName}_releases-tmp"
+	    exit 1
+	fi
 	
 #	 if [[ "${now_version}" != "${new_version}" ]]; then
 #	 echo -e "${Info} 发现[ ${APPName} ]已有新版本 [ ${new_version} ]，旧版本 [ ${now_version} ]"	
@@ -123,49 +142,49 @@ Download_XXX(){
 
 #	 if [[ $yn == [Yy] ]]; then         # [Yy] 正则表达式，指匹配 Y 或者 y ，不如下面的清晰好理解  
 	if [ $yn = Y ] || [ $yn  = y ]; then
-        echo && echo -e "${Info} 正在获取[ ${APPName} ]版本号为 [ ${new_version} ]各系统平台下载链接列表......"&& echo
-    else
-	    exit 1	   
+        echo && echo -e "${Info} 正在获取[ ${APPName} ]版本号为 [ ${new_version} ]各系统平台下载链接列表......"&& echo   
     fi  
 
-    [[ -z ${OwnerName} ]] && [[ -z ${RepositoryName} ]] &&[[ -z ${new_version} ]] && echo -e "${Error} 项目链接地址信息设置有误！" && exit 1
-
 #先抓取对应版本的所有下载链接，然后，根据提示的系统信息及处理器架构，手动选择需要的版本类型。并记录行数，用于选择下载链接时的判断
-#    wget -q -O ${OwnerName}_${RepositoryName}_releases  https://api.github.com/repos/${OwnerName}/${RepositoryName}/releases | cat ${OwnerName}_${RepositoryName}_releases | grep -E "\"name\":|\"browser_download_url\":" | grep -e "${new_version}"| awk -F "\"" '{print $4 "   -----> " NR }' 
-    wget  -qO-  https://api.github.com/repos/${OwnerName}/${RepositoryName}/releases | grep -E "\"name\":|\"browser_download_url\":" | grep -e "${new_version}"| awk -F "\"" '{print $4 "   -----> " NR }' 
+    cat ${OwnerName}_${RepositoryName}_releases-tmp | grep -E "\"name\":|\"browser_download_url\":" | grep -e "${new_version}"| awk -F "\"" '{print $4 "   -----> " NR }' 
 
 #  NR 是 awk 内置变量，表示读取的行数；NF 指浏览记录的域（类似于 列 ）的个数；
     
-#	 tmpSum="0"      #临时变量，记录下载链接行数
-#    $tmpSum=$(cat ${OwnerName}_${RepositoryName}_releases | grep -E "\"name\":|\"browser_download_url\":" | grep -e "${new_version}"| awk 'END{print NR}')
+#	 tmpSum="0"      临时变量，记录下载链接行数
+    tmpSum=$( cat ${OwnerName}_${RepositoryName}_releases-tmp | grep -E "\"name\":|\"browser_download_url\":" | grep -e "${new_version}"| awk 'END{print NR}')
 #    echo $tmpSum
    
     echo -e "${Tip}请从以上编号中选取适合的下载链接编号！优先选择对应系统及架构的二进制包" && echo -n -e "${Tip}" && read -e -p "如果使用源码包编译时需要考虑库依赖，需要手动自行安装！" Num_DL
-#    echo && [[ -z ${Num_DL} ]] && [ "${Num_DL}" > "0" ] && [ "${Num_DL}" <= "${tmpSum}" ] && echo -e "${Error} 您的选择有误,请输入正确数字！" && exit 1
-    echo && [[ -z ${Num_DL} ]] && echo -e "${Error} 您的选择有误,请输入正确数字！" && exit 1
+   [[ -z ${Num_DL} ]] || [[ ${Num_DL} -le 0 ]]|| [[ ${Num_DL} -gt ${tmpSum} ]] && echo -e "${Error} 您的选择有误,请输入正确数字！" && exit 1
+
+# " -le " 指！数值！小于等于 ； " -gt " 指！数值！大于，这里将字符串强制视为数字进行比较，否则容易报错。
+    
 
 #根据上面选择的下载链接编号，提取最终的 download_url
-    download_url=$( wget -qO- https://api.github.com/repos/${OwnerName}/${RepositoryName}/releases | grep -E "\"name\":|\"browser_download_url\":" | grep -e "${new_version}" | awk -F "\"" -v awkNum_DL="${Num_DL}" 'NR==awkNum_DL {print $4 }')    
+    download_url=$( cat ${OwnerName}_${RepositoryName}_releases-tmp | grep -E "\"name\":|\"browser_download_url\":" | grep -e "${new_version}" | awk -F "\"" -v awkNum_DL="${Num_DL}" 'NR==awkNum_DL {print $4 }')    
     echo && [[ ${download_url} ]] && echo -e "${Info} 您选择的下载链接是：${Green_font_prefix}[ ${download_url} ]${Font_color_suffix}"
  
  # awk 的 -v 参数用于设定一个变量，只有这样才能使用 Shell 脚本里面定义的变量，注意是！！赋值！！，因此不要有空格。   
 
     download_filename=$(echo "${download_url}" |awk -F "/" '{print $NF }')   #使用echo 将变量 ${download_url} 转换成字符串，否则，awk 无法处理
-	echo && [[ ${download_filename} ]] && echo -e "${Info} 您选择的下载文件类型是：${Green_font_prefix}[ ${download_filename} ]${Font_color_suffix}"
+	[[ ${download_filename} ]] && echo -e "${Info} 您选择的下载文件类型是：${Green_font_prefix}[ ${download_filename} ]${Font_color_suffix}"
 
    
-    echo -n -e "${Tip}" &&  read -e -p "是否开始下载版本为 [ ${new_version} ] 的[ ${APPName} ] ? [Y/n] :" yn1
+    echo && echo -n -e "${Tip}" &&  read -e -p "是否开始下载版本为 [ ${new_version} ] 的[ ${APPName} ] ? [Y/n] :" yn1
     [[ -z "${yn1}" ]] && yn1="y"          #如果为空，即直接输入回车，则赋值yn1=y
     #if [[ $yn1 == [Yy] ]]; then         # [Yy] 正则表达式，指匹配 Y 或者 y ，不如下面的清晰好理解  
     if [ $yn1 = Y  ] || [  $yn1  =  y  ]; then
-	   [ -f  "${download_filename}""_""${new_version}" ] && echo -e "${Error} 本地已经存在一个版本为 [ ${new_version} ] 的[ ${APPName} ] ！" && exit 1
-	   [ ! -f  "${download_filename}""_""${new_version}" ] && wget -N  -c --no-check-certificate ${download_url} -O  "${download_filename}""_""${new_version}" && echo -e "${Info} 版本为 [ ${new_version} ] 的[ ${APPName} ] 已经下载成功！"
+	    [[ -s  "${download_filename}""_""${new_version}" ]] && echo -e "${Error} 本地已经存在一个版本为 [ ${new_version} ] 的[ ${APPName} ] ！" 
+	    [[ ! -s  "${download_filename}""_""${new_version}" ]] && wget -N -q -c --no-check-certificate ${download_url} -O  "${download_filename}""_""${new_version}" && echo -e "${Info} 版本为 [ ${new_version} ] 的[ ${APPName} ] 已经下载成功！"
+	    rm -rf ./"${OwnerName}_${RepositoryName}_releases-tmp"
     else
-	    exit 1
+	    rm -rf ./"${OwnerName}_${RepositoryName}_releases-tmp"
+	    exit 0
     fi 
 }
-
-    echo && echo -e "      GitHub 一键 XXX 程序升级脚本 ${Red_font_prefix} [${sh_ver}] ${Font_color_suffix}
+while true;
+do
+    echo && echo -e "      GitHub 一键 XXX 程序升级管理脚本 ${Red_font_prefix} [${sh_ver}] ${Font_color_suffix}
   ----Author:go2do | Blog:https://www.go2do.net ----
 ————————————  
  ${Green_font_prefix} 0.${Font_color_suffix} 升级本脚本
@@ -174,9 +193,11 @@ Download_XXX(){
  ${Green_font_prefix} 2.${Font_color_suffix} 自动解压  XXX
  ${Green_font_prefix} 3.${Font_color_suffix} 编译更新  XXX
  ${Green_font_prefix} 4.${Font_color_suffix} 启动运行  XXX
+————————————  
+ ${Green_font_prefix} Q.${Font_color_suffix} 结束&退出
 ————————————" && echo
 
-    echo -n -e "${Tip}"&& read -e -p "请输入数字 [0-4]:" num   
+    echo -n -e "${Tip}"&& read -e -p "请输入数字 [0-4] 或 [Q]：" num   
 
     case "$num" in
         0)
@@ -206,7 +227,12 @@ Download_XXX(){
 #	     Running_XXX       #自定义的 Running_XXX 函数调用，调用函数不需要写上" () "  ！！本功能留待后续添加！！
         echo -e "${Info} ！！本功能留待后续添加！！"
         ;;
-        *)
+        Q)
+	    echo -e "${Info} 正在结束&退出..." &&  	break 2
+        ;;
+	    *)
 	    echo -e "${Error} 请输入正确数字 [0-4]"
         ;;
     esac
+
+done
